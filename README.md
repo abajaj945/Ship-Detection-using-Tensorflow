@@ -1,2 +1,2 @@
 # Ship-Detection-using-Tensorflow
-Using the Airbus ship detection data from satellite images I have created a detection model using Yolo algoriithm.
+Using the Airbus ship detection data of satellite images I have created a ship detection model using Squeezenet and Yolo algorithm.
