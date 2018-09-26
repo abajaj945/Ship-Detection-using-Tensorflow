@@ -7,21 +7,21 @@ def swap_xy(rois):
     return tf.stack([y1, x1, y2, x2], axis=-1)
 
 
-def compute_mistakes(box_x, box_y, box_w, box_h, box_c_sim, target_x, target_y, target_w, target_h, target_is_plane, grid_nn):
-    DETECTION_TRESHOLD = 0.5  # plane "detected" if predicted C>0.5 TODO: refactor this
-    ERROR_TRESHOLD = 0.3  # plane correctly localized if predicted x,y,w within % of ground truth
-    detect_correct = tf.logical_not(tf.logical_xor(tf.greater(box_c_sim, DETECTION_TRESHOLD), target_is_plane))
+def compute_mistakes(box_x, box_y, box_w, box_h, box_c_sim, target_x, target_y, target_w, target_h, target_is_ship, grid_nn):
+    DETECTION_TRESHOLD = 0.5  # ship "detected" if predicted C>0.5 TODO: refactor this
+    ERROR_TRESHOLD = 0.3  # ship correctly localized if predicted x,y,w within % of ground truth
+    detect_correct = tf.logical_not(tf.logical_xor(tf.greater(box_c_sim, DETECTION_TRESHOLD), target_is_ship))
     ones = tf.ones(tf.shape(target_w))
-    nonzero_target_w = tf.where(target_is_plane, target_w, ones)
-    nonzero_target_h = tf.where(target_is_plane, target_h, ones)
+    nonzero_target_w = tf.where(target_is_ship, target_w, ones)
+    nonzero_target_h = tf.where(target_is_ship, target_h, ones)
 
-    # true if correct size where there is a plane, nonsense value where there is no plane
+    # true if correct size where there is a ship, nonsense value where there is no ship
     size_correct = tf.less((tf.abs(box_w - target_w) * tf.abs(box_h-target_h)) / (nonzero_target_w*nonzero_target_h), ERROR_TRESHOLD)
-    # true if correct position where there is a plane, nonsense value where there is no plane
+    # true if correct position where there is a ship, nonsense value where there is no ship
     position_correct = tf.less(tf.sqrt(tf.square(box_x - target_x) + tf.square(box_y - target_y)) / nonzero_target_w / grid_nn,     ERROR_TRESHOLD)
-    truth_no_plane = tf.logical_not(target_is_plane)
-    size_correct = tf.logical_or(size_correct, truth_no_plane)
-    position_correct = tf.logical_or(position_correct, truth_no_plane)
+    truth_no_ship = tf.logical_not(target_is_ship)
+    size_correct = tf.logical_or(size_correct, truth_no_ship)
+    position_correct = tf.logical_or(position_correct, truth_no_ship)
     size_correct = tf.logical_and(detect_correct, size_correct)
     position_correct = tf.logical_and(detect_correct, position_correct)
     all_correct = tf.logical_and(size_correct, position_correct)
@@ -64,13 +64,13 @@ def rois_in_image_relative(pixels,rois,img_h,img_w,max_rois):
       is_roi_empty = tf.stack([is_roi_empty, is_roi_empty, is_roi_empty, is_roi_empty], axis=-1)
       
       
-      rois_x1,rois_x2,rois_y1,rois_y2=tf.unstack(rois,axis=-1)
+      rois_x1,rois_y1,rois_x2,rois_y2=tf.unstack(rois,axis=-1)
       rois_x1=rois_x1 / img_w
-      rois_x2=rois_x2 / img_w
       rois_y1=rois_y1 / img_h
+      rois_x2=rois_x2 / img_w
       rois_y2=rois_y2 / img_h
 
-      rois=tf.stack([rois_x1,rois_x2,rois_y1,rois_y2],axis=-1)
+      rois=tf.stack([rois_x1,rois_y1,rois_x2,rois_y2],axis=-1)
 
       return tf.where(is_roi_empty, tf.zeros_like(rois), rois)
       

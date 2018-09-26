@@ -11,7 +11,7 @@ from tensorflow.python.platform import tf_logging as logging
 import numpy as np
 import imgdbg as imgdbg
 import math
-
+import settings
 
 def learn_rate_decay(step, params):
     """ Model building utility function. Learning rate decay parametrized from
@@ -106,7 +106,7 @@ def yolo_roi_attribution(tile, rois, yolo_cfg):
     # maybe not needed
     yolo_target_rois = tf.reshape(yolo_target_rois, [yolo_cfg.grid_nn,
                                                      yolo_cfg.grid_nn,
-                                                     yolo_cfg.cell_n, 4])  # 3 for x, y, w
+                                                     yolo_cfg.cell_n, 4])  # 4 for x, y, w, h
 
     return yolo_target_rois
 
@@ -125,7 +125,7 @@ def generate_slice(pixels, rois, fname, yolo_cfg, rnd_hue, rnd_orientation):
     rois = tf.reshape(rois, [-1, 4])  # I know the shape but Tensorflow does not
     rois_n = tf.shape(rois)[0] # known shape [n, 4]
 
-    target_rois = box.rois_in_image_relative(pixels, rois,img_h,img_w,50)  # shape [rois_n, 4] convert in range(0,1)
+    target_rois = box.rois_in_image_relative(pixels, rois, img_h, img_w, settings.max_rois)  # shape [rois_n, 4] convert in range(0,1)
 
     
     if rnd_orientation:
@@ -138,8 +138,6 @@ def generate_slice(pixels, rois, fname, yolo_cfg, rnd_hue, rnd_orientation):
     if rnd_hue:  # random hue shift for all training images
         image_tiles = random_hue(image_tiles)
 
-    # filename containing the airport name for logging and debugging
-    
 
     features, labels = features_and_labels(pixels, yolo_target_rois, target_rois, fname)
     return features, labels
@@ -153,8 +151,8 @@ def train_input_fn(directory,batch_size,yolo_cfg):
     dataset = fileset.map(load_img_and_json_files)
     dataset = dataset.map(lambda pix, rois, fname: generate_slice(pix, rois, fname,
                                                                  yolo_cfg=yolo_cfg,
-                                                                 rnd_hue=False,
-                                                                 rnd_orientation=hparams['data_rnd_hue']))
+                                                                 rnd_hue=hparams['data_rnd_hue'],
+                                                                 rnd_orientation=hparams['data_rnd_orientation']))
     
     
     dataset=dataset.batch(batch_size).repeat()
@@ -222,7 +220,7 @@ def model_fn(features, labels, mode, params):
     #Y, info = model_core_darknet17(X, mode, params, info)
     Y, info = model_core_squeezenet12(X, mode, params,info)
     logging.debug(X.shape)
-    # YOLO head: predicts bounding boxes around airplanes
+    # YOLO head: predicts bounding boxes around ships
     box_x, box_y, box_w, box_h, box_c, box_c_logits, info = layer.YOLO_head(Y, mode, params, info, grid_nn, cell_n)
 
     # Debug: print the model structure
@@ -230,10 +228,8 @@ def model_fn(features, labels, mode, params):
         logging.log(logging.INFO, info["description"])
         logging.log(logging.INFO, "NN {} layers / {:,d} total weights".format(info["layers"], info["weights"]))
 
-    # TODO: refactor predicted_rois and predicted_c (or keep it to keep the conde compatible with confidence factor implem?)
-    # with the current softmax implementation, confidence factors are either 0 or 1.
     box_c_sim = box_c[:,:,:,:,1]  # shape [batch, GRID_N,GRID_N,CELL_B]
-    DETECTION_TRESHOLD = 0.5  # plane "detected" if predicted C>0.5
+    DETECTION_TRESHOLD = 0.5  # ship "detected" if predicted C>0.5
     detected_w = tf.where(tf.greater(box_c_sim, DETECTION_TRESHOLD), box_w, tf.zeros_like(box_w))
     detected_h = tf.where(tf.greater(box_c_sim, DETECTION_TRESHOLD), box_h, tf.zeros_like(box_w))
     
@@ -242,7 +238,7 @@ def model_fn(features, labels, mode, params):
     predicted_rois = box.grid_cell_to_tile_coords(predicted_rois, grid_nn, 768) / 768
     predicted_rois = tf.reshape(predicted_rois, [-1, grid_nn*grid_nn*cell_n, 4])
     predicted_c = tf.reshape(box_c_sim, [-1, grid_nn*grid_nn*cell_n])
-    # only the rois where a plane was detected
+    # only the rois where a ship was detected
     detected_rois = tf.stack([box_x, box_y, detected_w, detected_h], axis=-1)  # shape [batch, GRID_N, GRID_N, CELL_B, 4]
     detected_rois = box.grid_cell_to_tile_coords(detected_rois, grid_nn, 768) / 768
     detected_rois = tf.reshape(detected_rois, [-1, grid_nn*grid_nn*cell_n, 4])
@@ -252,22 +248,22 @@ def model_fn(features, labels, mode, params):
     if mode != tf.estimator.ModeKeys.PREDICT:
 
         # Target labels
-                # Ground truth boxes. Used to compute IOU accuracy and display debug ground truth boxes.
+        # Ground truth boxes. Used to compute IOU accuracy and display debug ground truth boxes.
         target_rois = labels["target_rois"] # shape [batch, MAX_TARGET_ROIS_PER_TILE, x1y1x2y2]
         # Ground truth boxes assigned to YOLO grid cells. Used to compute loss.
         target_rois_yolo = labels["yolo_target_rois"]  # shape [4,4,3,3] = [batch, GRID_N, GRID_N, CEL_B, xywh]
         target_x, target_y, target_w, target_h = tf.unstack(target_rois_yolo, axis=-1) # shape 3 x [batch, 4,4,3] = [batch, GRID_N, GRID_N, CELL_B]
         # target probability is 1 if there is a corresponding target box, 0 otherwise
-        target_is_plane = tf.greater(target_w, 0.0001)
-        target_is_plane_onehot = tf.one_hot(tf.cast(target_is_plane, tf.int32), 2, dtype=tf.float32)
-        target_is_plane_float = tf.cast(target_is_plane, tf.float32) # shape [batch, 4,4,3] = [batch, GRID_N, GRID_N, CELL_B]
+        target_is_ship = tf.greater(target_w, 0.0001)
+        target_is_ship_onehot = tf.one_hot(tf.cast(target_is_ship, tf.int32), 2, dtype=tf.float32)
+        target_is_ship_float = tf.cast(target_is_ship, tf.float32) # shape [batch, 4,4,3] = [batch, GRID_N, GRID_N, CELL_B]
 
         # Mistakes and correct detections for visualisation and debugging.
         # This is computed against the ground truth boxes assigned to YOLO grid cells.
         mistakes, size_correct, position_correct, all_correct = box.compute_mistakes(box_x, box_y,
                                                                                      box_w, box_h, box_c_sim,
                                                                                      target_x, target_y,
-                                                                                     target_w, target_h, target_is_plane, grid_nn)
+                                                                                     target_w, target_h, target_is_ship, grid_nn)
         
         
         debug_img = imgdbg.debug_image(X, mistakes, target_rois, predicted_rois, predicted_c,
@@ -284,8 +280,8 @@ def model_fn(features, labels, mode, params):
         
         # Improvement ideas and experiment results
         # 1) YOLO trick: take square root of predicted size for loss so as not to drown errors on small boxes: tested, no benefit
-        # 2) if only one plane in cell, teach all cell_n detectors to detect it: implemented in box.n_experimental_roi_selection_strategy, beneficial
-        # 3) TODO: try two or more grids, shifted by 1/2 cell size: This could make it easier to have cells detect planes in their center, if that is an actual problem they have (no idea)
+        # 2) if only one ship in cell, teach all cell_n detectors to detect it: implemented in box.n_experimental_roi_selection_strategy, beneficial
+        # 3) TODO: try two or more grids, shifted by 1/2 cell size: This could make it easier to have cells detect ships in their center, if that is an actual problem they have (no idea)
         # 4) try using TC instead of TC_ in position loss and size loss: tested, no benefit
         # 5) TODO: one run without batch norm for comparison
         # 6) TODO: add dropout, tested, weird resukts: eval accuracy goes up signicantly but model performs worse in real life. Probably not enough training data.
@@ -300,9 +296,9 @@ def model_fn(features, labels, mode, params):
         logging.log(logging.INFO,box_h)
         logging.log(logging.INFO,box_c)
         logging.log(logging.INFO,box_c_logits)
-        position_loss = tf.reduce_mean(target_is_plane_float * (tf.square(box_x - target_x) + tf.square(box_y - target_y)))
-        size_loss = tf.reduce_mean(target_is_plane_float * tf.square(box_w - target_w) * 2 + target_is_plane_float * tf.square(box_h - target_h) * 2)
-        obj_loss = tf.losses.softmax_cross_entropy(target_is_plane_onehot, box_c_logits)
+        position_loss = tf.reduce_mean(target_is_ship_float * (tf.square(box_x - target_x) + tf.square(box_y - target_y)))
+        size_loss = tf.reduce_mean(target_is_ship_float * tf.square(box_w - target_w) * 2 + target_is_ship_float * tf.square(box_h - target_h) * 2)
+        obj_loss = tf.losses.softmax_cross_entropy(target_is_ship_onehot, box_c_logits)
 
         # YOLO trick: weights the different losses differently
         loss_weight_total = (params['lw1'] + params['lw2'] + params['lw3']) * 1.0  # 1.0 to force conversion to float
@@ -322,7 +318,7 @@ def model_fn(features, labels, mode, params):
             # metrics removed from training mode because they are not yet supported with MirroredStrategy
             eval_metrics = {"position_error": tf.metrics.mean(w_position_loss),
                             "size_error": tf.metrics.mean(w_size_loss),
-                            "plane_cross_entropy_error": tf.metrics.mean(w_obj_loss),
+                            "ship_cross_entropy_error": tf.metrics.mean(w_obj_loss),
                             "mistakes": tf.metrics.mean(nb_mistakes),
                             'IOU': tf.metrics.mean(iou_accuracy)
                             }
@@ -334,7 +330,7 @@ def model_fn(features, labels, mode, params):
         # Tensorboard summaries for debugging
         tf.summary.scalar("position_error", w_position_loss)
         tf.summary.scalar("size_error", w_size_loss)
-        tf.summary.scalar("plane_cross_entropy_error", w_obj_loss)
+        tf.summary.scalar("ship_cross_entropy_error", w_obj_loss)
         tf.summary.scalar("loss", loss)
         tf.summary.image("input_image", debug_img, max_outputs=20)
         tf.summary.scalar("learning_rate", lr)
@@ -345,7 +341,7 @@ def model_fn(features, labels, mode, params):
         mode=mode,
         predictions={"rois":predicted_rois, "rois_confidence": predicted_c},  # name these fields as you like
         loss=loss, train_op=train_op, eval_metric_ops=eval_metrics,
-        export_outputs={'classes': tf.estimator.export.PredictOutput({"rois": predicted_rois, # TODO: the visualisation GUI was coded for swapped coordinates y1 x1 y2 x2
+        export_outputs={'classes': tf.estimator.export.PredictOutput({"rois": predicted_rois, 
                                                                       "rois_confidence": predicted_c})}  # TODO: remove legacy C
 )
 
@@ -388,11 +384,11 @@ hparams={'data_rnd_orientation': False,
          'data_cache_n_epochs': 0,
          'lw3': 30,
          'data_rnd_hue': False,
+         'data_rnd_orientation':True,
          'data_rnd_distmax': 2.0,
          'cell_n': 2,
          'bnexp': 0.993,
          'first_layer_filter_depth': 32,
-         'data_tiles_per_gt_roi': 166,
          'lr0': 0.01,
          'batch_size': 10}
 
