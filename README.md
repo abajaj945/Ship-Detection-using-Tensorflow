@@ -4,5 +4,6 @@ Using the Airbus ship detection data of satellite images I have created a ship d
 ## Training 
 I trained the model on google cloud for 3 days untill I burned all my cloud credits. The model achieved an an IOU of 0.342 over test dataset. The model did not performed well on test-dataset.
 THe model can be improved by
-1-Using squeezenet17
-2-Better datasampling
+###-Using squeezenet17
+###-Better datasampling
+###-more training hours
