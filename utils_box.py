@@ -44,7 +44,7 @@ def batch_filter_by_bool(rois, mask, max_n):
     rois_n = tf.count_nonzero(mask, axis=1)
     overflow = tf.maximum(rois_n - max_n, 0)
     
-    rois = tf.map_fn(lambda rois__mask: filter_by_bool_remove(*rois__mask, max_n=max_n), (rois, mask), dtype=tf.float32)  # shape [batch, max_n, 4]
+    rois = tf.map_fn(lambda rois__mask: filter_by_bool_remove(*rois__mask, max_n=max_n), (rois, mask), dtype=tf.float32)# shape[batch,max_n, 4]
     rois=tf.reshape(rois,[-1,max_n,4])
     logging.log(logging.INFO,rois)
       # Tensorflow needs a hint about the shape
@@ -258,10 +258,11 @@ def grid_cell_to_tile_coords(rois, grid_n, tile_size):
     roi_cy = roi_cy * cell_w/2 # roi_x=1 means cell center + cell_w/2
     roi_cy = roi_cy+gr_cy
     roi_w = roi_w * tile_size
+    roi_h = roi_h * tile_size
     roi_x1 = roi_cx - roi_w/2
     roi_x2 = roi_cx + roi_w/2
-    roi_y1 = roi_cy - roi_w/2
-    roi_y2 = roi_cy + roi_w/2
+    roi_y1 = roi_cy - roi_h/2
+    roi_y2 = roi_cy + roi_h/2
     rois = tf.stack([roi_x1, roi_y1, roi_x2, roi_y2], axis=4)  # shape [batch, grid_n, grid_n, n, 4]
     return rois
 

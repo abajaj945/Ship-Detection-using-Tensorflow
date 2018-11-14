@@ -172,7 +172,7 @@ def debug_image(img, mistakes, target_rois, predicted_rois, predicted_c,
                 size_correct, position_correct, all_correct,
                 grid_nn, cell_n, tile_size):
     """Writes on top of image tile "img" all the debug data necessary: number of mistakes, detected
-    boxes and ground truth boxes. Color codes mis-detections:
+       boxes and ground truth boxes. Color codes mis-detections:
         Yellow: correct detection
         Orange: size OK but wrong position
         Purple: position OK but wrong size
