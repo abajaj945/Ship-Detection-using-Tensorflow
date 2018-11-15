@@ -44,7 +44,7 @@ def batch_filter_by_bool(rois, mask, max_n):
     rois_n = tf.count_nonzero(mask, axis=1)
     overflow = tf.maximum(rois_n - max_n, 0)
     
-    rois = tf.map_fn(lambda rois__mask: filter_by_bool_remove(*rois__mask, max_n=max_n), (rois, mask), dtype=tf.float32)  # shape [batch, max_n, 4]
+    rois = tf.map_fn(lambda rois__mask: filter_by_bool_remove(*rois__mask, max_n=max_n), (rois, mask), dtype=tf.float32)# shape[batch,max_n, 4]
     rois=tf.reshape(rois,[-1,max_n,4])
     logging.log(logging.INFO,rois)
       # Tensorflow needs a hint about the shape
@@ -152,7 +152,7 @@ def n_largest_rois_in_cell(tile, rois, rois_n, grid_n, n, comparator="largest_w"
         rs_largest_roi_in_cell = [tf.gather(cr, li) for cr, li in zip(rs_cross_rois, rs_largest_indices)]
         largest_roi_in_cell = tf.stack(rs_largest_roi_in_cell, axis=0)  # shape [grid_n * grid_n, 4]
         largest_roi_in_cell = tf.reshape(largest_roi_in_cell, [grid_n, grid_n, 4]) # shape [grid_n, grid_n, 4]
-        # cells that do not have a roi in them, set their "largest roi in cell" to (x=0,y=0,w=0)
+        # cells that do not have a roi in them, set their "largest roi in cell" to (x=0,y=0,w=0,h=0)
         any_roi_in_cell = tf.tile(tf.expand_dims(any_roi_in_cell, axis=-1), [1, 1, 4])  # shape [grid_n, grid_n, 4]
         largest_roi_in_cell = tf.where(any_roi_in_cell, largest_roi_in_cell, zeros) # shape [grid_n, grid_n, 4]
         n_largest.append(largest_roi_in_cell)
@@ -258,10 +258,11 @@ def grid_cell_to_tile_coords(rois, grid_n, tile_size):
     roi_cy = roi_cy * cell_w/2 # roi_x=1 means cell center + cell_w/2
     roi_cy = roi_cy+gr_cy
     roi_w = roi_w * tile_size
+    roi_h = roi_h * tile_size
     roi_x1 = roi_cx - roi_w/2
     roi_x2 = roi_cx + roi_w/2
-    roi_y1 = roi_cy - roi_w/2
-    roi_y2 = roi_cy + roi_w/2
+    roi_y1 = roi_cy - roi_h/2
+    roi_y2 = roi_cy + roi_h/2
     rois = tf.stack([roi_x1, roi_y1, roi_x2, roi_y2], axis=4)  # shape [batch, grid_n, grid_n, n, 4]
     return rois
 

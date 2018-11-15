@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.python.platform import tf_logging as logging
 
 def dropout(x, mode, params):
-    """Dropout configured from command-line parameters "dropout" and "spatial_dropout".
+    """Dropout configured from parameters "dropout" and "spatial_dropout".
     In "spatial_dropout" mode, the dropout mask stays constant when scanning the image
     in X and Y directions. This gives better results in convolutional layers."""
 
@@ -17,7 +17,7 @@ def dropout(x, mode, params):
 
 
 def batch_normalization(x, mode, params, scale=False):
-    """Batch normalization layer parametrized from command-line parameter "bnexp". Batch
+    """Batch normalization layer parametrized from  parameter "bnexp". Batch
     normalization includes scaling and centering. Centering is always used and replaces
     biases. Do not use biases in your neural network layer. Scaling should be off (False)
     for activation functions that are invariant to scale (relu) and on (True) for those
@@ -106,7 +106,7 @@ def sqnet_squeeze_pool(x, mode, params, info, depth):
 def sqnet_expand(x, mode, params, info, depth, last=False):
     """Squeezenet "expand" layer, i.e. a 1x1 convolutional layer in parallel with a 3x3
     convolutional layer. Their results are concatenated. If the 'last' parameter is set
-    output depth is set to be divisible by 5 so that a YOLO head can be added right after."""
+    output depth is set to be divisible by 6 so that a YOLO head can be added right after."""
 
     d1 = d2 = depth//2
     if last:
@@ -153,20 +153,18 @@ def YOLO_head(x, mode, params, info, grid_nn, cell_n):
     assert grid_nn==48
     pool_size = 48//grid_nn
     # Average pooling down to the grid size.
-    # for GRID_N=16, need pool_size=1, strides=1 (no pooling)
-    # for GRID_N=8, need pool_size=2, strides=2
-    # for GRID_N=4, need pool_size=4, strides=4
+    # for GRID_N=48, need pool_size=1, strides=1 (no pooling)
     y = tf.layers.average_pooling2d(x, pool_size=pool_size, strides=pool_size, padding="valid") # [batch, grid_nn, grid_nn, cell_n*32]
 
     
     info = _layer_stats(info, "YOLO head, avg pool", y, 0, 0)
 
-    # for each cell, this has CELL_B predictions of bounding box (x,y,w,c)
-    # apply tanh for x, y, sigmoid for w, softmax for c
+    # for each cell, this has CELL_B predictions of bounding box (x,y,w,h,c)
+    # apply tanh for x, y, sigmoid for w,h, softmax for c
     # TODO: idea: batch norm may be bad on this layer
     # TODO: try with a deeper layer as well
     # TODO: try a filtered convolution instead of pooling2d, maybe info from cell sides should be weighted differently
-    box_xr, box_yr, box_wr, box_hr, box_c0, box_c1 = tf.split(y, 6, axis=-1)  # shape 4 x [batch, grid_nn, grid_nn, 16]
+    box_xr, box_yr, box_wr, box_hr, box_c0, box_c1 = tf.split(y, 6, axis=-1)  # shape 4 x [batch, grid_nn, grid_nn, 36]
     box_x = tf.nn.tanh(conv1x1_batch_norm(box_xr, mode, params, depth=cell_n))  # shape [batch, grid_nn, grid_nn, cell_n]
     box_y = tf.nn.tanh(conv1x1_batch_norm(box_yr, mode, params, depth=cell_n))  # shape [batch, grid_nn, grid_nn, cell_n]
     box_w = tf.nn.sigmoid(conv1x1_batch_norm(box_wr, mode, params, depth=cell_n))  # shape [batch, grid_nn, grid_nn, cell_n]
