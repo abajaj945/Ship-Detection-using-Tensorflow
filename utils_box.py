@@ -152,7 +152,7 @@ def n_largest_rois_in_cell(tile, rois, rois_n, grid_n, n, comparator="largest_w"
         rs_largest_roi_in_cell = [tf.gather(cr, li) for cr, li in zip(rs_cross_rois, rs_largest_indices)]
         largest_roi_in_cell = tf.stack(rs_largest_roi_in_cell, axis=0)  # shape [grid_n * grid_n, 4]
         largest_roi_in_cell = tf.reshape(largest_roi_in_cell, [grid_n, grid_n, 4]) # shape [grid_n, grid_n, 4]
-        # cells that do not have a roi in them, set their "largest roi in cell" to (x=0,y=0,w=0)
+        # cells that do not have a roi in them, set their "largest roi in cell" to (x=0,y=0,w=0,h=0)
         any_roi_in_cell = tf.tile(tf.expand_dims(any_roi_in_cell, axis=-1), [1, 1, 4])  # shape [grid_n, grid_n, 4]
         largest_roi_in_cell = tf.where(any_roi_in_cell, largest_roi_in_cell, zeros) # shape [grid_n, grid_n, 4]
         n_largest.append(largest_roi_in_cell)

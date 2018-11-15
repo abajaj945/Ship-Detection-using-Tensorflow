@@ -46,10 +46,10 @@ def extract_filename_without_extension(filename):
 
 def load_file_list(directory):
     # load images, load jsons, associate them by name, XYZ.jpg with XYZ.json
-    img_files1 = glob.glob(directory + "/6*.jpg")
-    img_files2 = glob.glob(directory + "/6*.jpeg")
+    img_files1 = glob.glob(directory + "/*.jpg")
+    img_files2 = glob.glob(directory + "/*.jpeg")
     img_files  = img_files1 + img_files2
-    roi_files  = glob.glob(directory + "/6*.json")
+    roi_files  = glob.glob(directory + "/*.json")
     img_kv = list(map(extract_filename_without_extension, img_files))
     roi_kv = list(map(extract_filename_without_extension, roi_files))
     all_kv = img_kv + roi_kv
@@ -111,7 +111,7 @@ def decode_image_and_json_bytes(img_bytes, json_bytes):
 
 
 def yolo_roi_attribution(tile, rois, yolo_cfg):
-    # Tile divided in grid_nn x grid_nn grid
+    # Image divided in grid_nn x grid_nn grid
     # Recognizing cell_n boxes per grid cell
     # For each tile, for each grid cell, determine the cell_n largest ROIs centered in that cell
     # Output shape [tiles_n, grid_nn, grid_nn, cell_n, 3] 3 for x, y, w
@@ -273,8 +273,6 @@ def model_fn(features, labels, mode, params):
     # The model itself is here
     #Y, info = model_core_squeezenet12(X, mode, params, info)
     #Y, info = model_core_squeezenet17(X, mode, params, info)
-    #Y, info = model_core_darknet(X, mode, params, info)
-    #Y, info = model_core_darknet17(X, mode, params, info)
     Y, info = model_core_squeezenet12(X, mode, params,info)
     logging.debug(X.shape)
     # YOLO head: predicts bounding boxes around ships
