@@ -426,7 +426,7 @@ def main(argv,hparams):
   yolo_cfg = YOLOConfig(grid_nn =48, cell_n = 2, cell_swarm = True, cell_grow = 1.0)
   train_data_dir=arguments["train_dir"]
 
-  train_data_input_fn = lambda: train_input_fn(data_dir,
+  train_data_input_fn = lambda: train_input_fn(train_data_dir,
                                           hparams["batch_size"],
                                           yolo_cfg)             
 
