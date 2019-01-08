@@ -1,4 +1,8 @@
 """
+<<<<<<< HEAD
+=======
+Copyright 2018 Google LLC
+>>>>>>> 5df6a8c4be1bdcf1be34f56e92323b55866dc10e
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -171,7 +175,11 @@ def debug_image(img, mistakes, target_rois, predicted_rois, predicted_c,
                 size_correct, position_correct, all_correct,
                 grid_nn, cell_n, tile_size):
     """Writes on top of image tile "img" all the debug data necessary: number of mistakes, detected
+<<<<<<< HEAD
        boxes and ground truth boxes. Color codes mis-detections:
+=======
+    boxes and ground truth boxes. Color codes mis-detections:
+>>>>>>> 5df6a8c4be1bdcf1be34f56e92323b55866dc10e
         Yellow: correct detection
         Orange: size OK but wrong position
         Purple: position OK but wrong size
@@ -213,4 +221,8 @@ def debug_image(img, mistakes, target_rois, predicted_rois, predicted_c,
     for i in range(9):
         debug_rois = tf.where(tf.greater(select, 0.1*(i+1)), other_rois, no_box)
         debug_img = draw_color_boxes(debug_img, debug_rois, 0.1*(i+2), 0, 0)
+<<<<<<< HEAD
         return debug_img
+=======
+        return debug_img
+>>>>>>> 5df6a8c4be1bdcf1be34f56e92323b55866dc10e

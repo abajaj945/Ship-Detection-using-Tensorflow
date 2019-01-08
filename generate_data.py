@@ -3,6 +3,7 @@ from tqdm import tqdm
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 from skimage.io import imread
+<<<<<<< HEAD
 from skimage.segmentation import mark_boundaries
 from skimage.measure import label, regionprops
 from skimage.morphology import label
@@ -15,6 +16,13 @@ from sklearn.model_selection import train_test_split
 
 
 
+=======
+import matplotlib.pyplot as plt
+from skimage.segmentation import mark_boundaries
+from skimage.measure import label, regionprops
+
+from skimage.morphology import label
+>>>>>>> 5df6a8c4be1bdcf1be34f56e92323b55866dc10e
 def multi_rle_encode(img):
     labels = label(img[:, :, 0])
     return [rle_encode(labels==k) for k in np.unique(labels[labels>0])]
@@ -56,6 +64,7 @@ def masks_as_image(in_mask_list, all_masks=None):
             all_masks += rle_decode(mask)
     return np.expand_dims(all_masks, -1)
 
+<<<<<<< HEAD
 def start(path_to_csv, output_dir):
    masks = pd.read_csv(path_to_csv)
    print(masks.shape[0], 'masks found')
@@ -77,6 +86,34 @@ def start(path_to_csv, output_dir):
 
     rle_0 = masks.query('ImageId=="'+image+'"')['EncodedPixels']
     mask_0 = masks_as_image(rle_0)
+=======
+masks = pd.read_csv(os.path.join('train_ship_segmentations_v2.csv'))
+print(masks.shape[0], 'masks found')
+print(masks['ImageId'].value_counts().shape[0])
+masks.head()
+
+images_with_ship = masks.ImageId[masks.EncodedPixels.isnull()==False]
+images_with_ship = np.unique(images_with_ship.values)
+images_without_ship = masks.ImageId[masks.EncodedPixels.isnull()==True]
+images_without_ship = np.unique(images_without_ship.values)
+
+
+print('There are ' +str(len(images_with_ship)) + ' image files with masks')
+
+
+import gc 
+bboxes_dict = {}
+i = 0
+count_ships = 0
+for image in tqdm(images_with_ship):
+
+    rle_0 = masks.query('ImageId=="'+image+'"')['EncodedPixels']
+    mask_0 = masks_as_image(rle_0)
+    
+
+    #
+    # 
+>>>>>>> 5df6a8c4be1bdcf1be34f56e92323b55866dc10e
     lbl_0 = label(mask_0) 
     props = regionprops(lbl_0)
     bboxes = []
@@ -84,29 +121,56 @@ def start(path_to_csv, output_dir):
     for prop in props:
         bboxes.append(prop.bbox)
         
+<<<<<<< HEAD
+=======
+        
+>>>>>>> 5df6a8c4be1bdcf1be34f56e92323b55866dc10e
     i = i + 1
     if i % 500 == 0:
         gc.collect()    
 
     bboxes_dict[image] = bboxes.copy()
 
+<<<<<<< HEAD
    bboxes_without_dict={}
     
    for image in tqdm(images_without_ship):
     
     bboxes = []
     bboxes.append([0,0,0,0])
+=======
+bboxes_without_dict={}
+    
+for image in tqdm(images_without_ship):
+    
+    bboxes = []
+    bboxes.append([0,0,0,0])
+        
+        
+>>>>>>> 5df6a8c4be1bdcf1be34f56e92323b55866dc10e
     i = i + 1
     if i % 500 == 0:
         gc.collect()    
 
     bboxes_without_dict[image] = bboxes.copy()
 
+<<<<<<< HEAD
    i=0
    for j in tqdm(bboxes_dict):
     i=i+1
     fname,extension=j.split('.')
     lis=[]
+=======
+import json as js
+from shutil import copy2
+i=0
+for j in tqdm(bboxes_dict):
+    i=i+1
+    fname,extension=j.split('.')
+    lis=[]
+
+    directory="ship_data"
+>>>>>>> 5df6a8c4be1bdcf1be34f56e92323b55866dc10e
     
     for k in bboxes_dict[j]:
         dist={'x1':k[1],
@@ -116,17 +180,31 @@ def start(path_to_csv, output_dir):
         lis.append(dist)        
     dict={'rois':lis}
     json=js.dumps(dict)
+<<<<<<< HEAD
     f=open(os.path.join(output_dir,fname+'.json'),'w')
+=======
+    f=open(os.path.join(directory,fname+'.json'),'w')
+    
+>>>>>>> 5df6a8c4be1bdcf1be34f56e92323b55866dc10e
     f.write(json)
     f.close
     if (1%1000==0):
         print(i,directory)
 
+<<<<<<< HEAD
    i=0
    for j in tqdm(bboxes_without_dict):
     i=i+1
     fname,extension=j.split('.')
     lis=[]
+=======
+i=0
+for j in tqdm(bboxes_without_dict):
+    i=i+1
+    fname,extension=j.split('.')
+    lis=[]
+    directory='ship_data'
+>>>>>>> 5df6a8c4be1bdcf1be34f56e92323b55866dc10e
     
     for k in bboxes_without_dict[j]:
         dist={'x1':k[1],
@@ -136,12 +214,17 @@ def start(path_to_csv, output_dir):
         lis.append(dist)        
     dict={'rois':lis}
     json=js.dumps(dict)
+<<<<<<< HEAD
     f=open(os.path.join(output_dir,fname+'.json'),'w')
+=======
+    f=open(os.path.join(directory,fname+'.json'),'w')
+>>>>>>> 5df6a8c4be1bdcf1be34f56e92323b55866dc10e
     
     f.write(json)
     f.close
     if (1%1000==0):
         print(i,directory)
+<<<<<<< HEAD
        
 def main(argv):
     parser=argparse.ArgumentParser()
@@ -171,4 +254,8 @@ def main(argv):
 
 if __name__ == '__main__':
      main(sys.argv)
+=======
+        
+
+>>>>>>> 5df6a8c4be1bdcf1be34f56e92323b55866dc10e
 
