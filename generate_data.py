@@ -11,6 +11,8 @@ from shutil import copy2
 import argparse
 import sys
 import gc 
+from sklearn.model_selection import train_test_split
+
 
 
 def multi_rle_encode(img):
@@ -125,7 +127,6 @@ def start(path_to_csv, output_dir):
     i=i+1
     fname,extension=j.split('.')
     lis=[]
-    directory='ship_data'
     
     for k in bboxes_without_dict[j]:
         dist={'x1':k[1],
@@ -145,14 +146,28 @@ def start(path_to_csv, output_dir):
 def main(argv):
     parser=argparse.ArgumentParser()
     parser.add_argument("--path_to_csv", help="path to your csv file")
-    parser.add_argument("--output_dir", help="path to your data folder")
+    parser.add_argument("--train_dir", help="path to your data folder")
+    parser.add_argument("--eval_dir", help="path to your evals data folder")
     
     args = parser.parse_args()
     arguments = args.__dict__
     path_to_csv= arguments["path_to_csv"]
-    output_dir= arguments["output_dir"]
+    train_dir= arguments["output_dir"]
     
-    start(path_to_csv,output_dir)
+    start(path_to_csv,train_dir)
+    img_filelist, roi_filelist = load_file_list(train_dir)
+    Xtrain, Xtest, ytrain, ytest = train_test_split(img_filelist, labels, test_size=0.25, random_state=47)
+
+    for i in tqdm(Xtest):
+       basename=os.path.basename(i)
+       os.rename(i,os.path.join(eval_dir,basename))
+      
+    for j in tqdm(ytest)):
+       basename=os.path.basename(j)
+       os.rename(i,os.path.join(eval_dir,basename))
+   
+    
+    
 
 if __name__ == '__main__':
      main(sys.argv)
