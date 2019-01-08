@@ -32,17 +32,26 @@ def load_file_list(directory):
         img_list, roi_list = zip(*inner_join)  # unzip, results are a tuple of img names and a tuple of roi names
         return list(img_list), list(roi_list)   
 
-def main():
-
+def main(argv):
+   parser=argparse.ArgumentParser()
+   parser.add_argument("--path_to_data", help="path to your data directory")
+   parser.add_argument("--path_to_eval_data_dir", help="path to your eval data directory")
+   
+   args = parser.parse_args()
+   arguments = args.__dict__
+   directory= arguments["path_to_data"]
+   eval_dir= arguments["path_to_eval_dir"]
    img_filelist, roi_filelist = load_file_list(directory)
    Xtrain, Xtest, ytrain, ytest = train_test_split(img_filelist, labels, test_size=0.25, random_state=47)
    for i in tqdm(Xtest):
        basename=os.path.basename(i)
-       os.rename(i,os.path.join(eval_directory,basename))
+       os.rename(i,os.path.join(eval_dir,basename))
       
    for j in tqdm(ytest)):
        basename=os.path.basename(j)
-       os.rename(i,os.path.join(eval_directory,basename))
+       os.rename(i,os.path.join(eval_dir,basename))
    
     
-    
+if __name__= '__main__':
+      main(sys.argv)
+

@@ -114,11 +114,7 @@ def yolo_roi_attribution(tile, rois, yolo_cfg):
     # Image divided in grid_nn x grid_nn grid
     # Recognizing cell_n boxes per grid cell
     # For each tile, for each grid cell, determine the cell_n largest ROIs centered in that cell
-<<<<<<< HEAD
     # Output shape [tiles_n, grid_nn, grid_nn, cell_n, 4] 4 for x, y, w, h
-=======
-    # Output shape [tiles_n, grid_nn, grid_nn, cell_n, 3] 3 for x, y, w
->>>>>>> 5df6a8c4be1bdcf1be34f56e92323b55866dc10e
     # dynamic number of rois
     rois = tf.reshape(rois, [-1, 4])  # I know the shape but Tensorflow does not
     rois_n = tf.shape(rois)[0]  # known shape [n, 4]
@@ -323,17 +319,7 @@ def model_fn(features, labels, mode, params):
         if mode == tf.estimator.ModeKeys.EVAL:
             iou_accuracy = box.compute_safe_IOU(target_rois, detected_rois, detected_rois_overflow, 768)
         # Loss function
-<<<<<<< HEAD
 
-=======
-        logging.log(logging.INFO,Y)
-        logging.log(logging.INFO,box_x)
-        logging.log(logging.INFO,box_y)
-        logging.log(logging.INFO,box_w)
-        logging.log(logging.INFO,box_h)
-        logging.log(logging.INFO,box_c)
-        logging.log(logging.INFO,box_c_logits)
->>>>>>> 5df6a8c4be1bdcf1be34f56e92323b55866dc10e
         position_loss = tf.reduce_mean(target_is_ship_float * (tf.square(box_x - target_x) + tf.square(box_y - target_y)))
         size_loss = tf.reduce_mean(target_is_ship_float * tf.square(box_w - target_w) * 2 + target_is_ship_float * tf.square(box_h - target_h) * 2)
         obj_loss = tf.losses.softmax_cross_entropy(target_is_ship_onehot, box_c_logits)
@@ -439,6 +425,9 @@ def main(argv,hparams):
 
   with tf.device('/gpu:0'):
     estimator.train(input_fn=train_data_input_fn,max_steps=hparams["iterations"])
+
+if __name__= '__main__':
+      main(sys.argv)
 
     
 
