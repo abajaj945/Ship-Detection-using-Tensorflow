@@ -147,8 +147,8 @@ def main(argv):
     args = parser.parse_args()
     arguments = args.__dict__
     path_to_csv= arguments["path_to_csv"]
-    train_dir= arguments["output_dir"]
-    
+    train_dir= arguments["train_dir"]
+    eval_dir= arguments["eval_dir"]
     start(path_to_csv,train_dir)
     img_filelist, roi_filelist = load_file_list(train_dir)
     Xtrain, Xtest, ytrain, ytest = train_test_split(img_filelist, labels, test_size=0.25, random_state=47)
