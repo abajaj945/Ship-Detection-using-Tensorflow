@@ -413,36 +413,6 @@ hparams={'data_rnd_orientation': False,
          'batch_size': 10}
 
 
-<<<<<<< HEAD
-=======
-YOLOConfig = namedtuple('yolocfg', 'grid_nn cell_n cell_swarm cell_grow')
-yolo_cfg = YOLOConfig(grid_nn =48, cell_n = 2, cell_swarm = True, cell_grow = 1.0)
-tfrec_filelist='/home/ubuntu/ship_data'
-train_data_input_fn = lambda: train_input_fn(tfrec_filelist,
-                                          hparams["batch_size"],
-                                          yolo_cfg)             
-
-eval_yolo_cfg = YOLOConfig(hparams["grid_nn"], hparams["cell_n"], hparams["cell_swarm"], 1.0)
-tfrec_filelist_eval='/home/ubuntu/ship_data'
-eval_data_input_fn = lambda: eval_input_fn(tfrec_filelist_eval,
-                                          hparams["eval_batch_size"],
-                                          eval_yolo_cfg)   
-
-
-estimator = tf.estimator.Estimator(model_fn=model_fn,
-                                    model_dir='first_1',
-                                    params=hparams)
-tensors_to_log = {"predictions": "softmax_tensor"}
-logging_hook = tf.train.LoggingTensorHook(
-      tensors=tensors_to_log, every_n_iter=50)
-
->>>>>>> 5df6a8c4be1bdcf1be34f56e92323b55866dc10e
-
-def extract_filename_without_extension(filename):
-    basename = os.path.basename(filename)
-    barename, extension = os.path.splitext(basename)
-    return barename
-<<<<<<< HEAD
     
 
 def main(argv,hparams):
@@ -471,16 +441,4 @@ def main(argv,hparams):
     estimator.train(input_fn=train_data_input_fn,max_steps=hparams["iterations"])
 
     
-=======
 
-
-img_kv = list(map(extract_filename_without_extension, filenames))
-    
-
-
-with tf.device('/gpu:0'):
-   estimator.train(input_fn=train_data_input_fn,max_steps=hparams["iterations"])
-
-   a=estimator.evaluate(input_fn=eval_data_input_fn)
-
->>>>>>> 5df6a8c4be1bdcf1be34f56e92323b55866dc10e
