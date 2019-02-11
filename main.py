@@ -18,7 +18,7 @@ default="6384c3e78.jpg"
 
 def learn_rate_decay(step, params):
     """ Model building utility function. Learning rate decay parametrized from
-    command-line parameters lr0, lr1 and lr2."""
+     parameters lr0, lr1 and lr2."""
     if params['decay_type'] == "exponential":
         lr = params['lr1'] + tf.train.exponential_decay(params['lr0'], step, params['lr2'], 1/math.e)
     elif params['decay_type'] == "cosine-restarts":
